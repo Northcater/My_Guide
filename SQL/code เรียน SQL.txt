@@ -1,0 +1,370 @@
+-- chinook.db
+-- คือ comment
+
+SELECT "hello world" -- เราจะพิมพ์อะไรแบบนี้ก็ได้
+SELECT 100*2 -- มันก็จะคิดเลขออกมาให้ ซึ่งก็คือ 200 มันคำนวณ +-*/ ตาม operation ของคณิตศาสตร์ แต่ใส่ () ก็จะชัดเจน
+
+SELECT * FROM customers; -- ดึงทุกคอลัมน์จากตาราง customers
+
+SELECT * FROM customers LIMIT 10; -- ดึงมาแค่ 10 แถวแรก
+
+-- LIMIT ใส่ OFFSET เพื่อบอกว่าจะเริ่มนับตั้งแต่แถวไหน โดยจะมีค่าเริ่มต้นที่ 0,1,2,3,... เหมือน python
+SELECT *
+FROM products
+LIMIT 2 OFFSET 1; -- แปลว่าเอามา 2 แถว โดยให้เริ่มนับตั้งแต่แถวตำแหน่งที่ 2 เป็นต้นไป เพราะ 0 คือตำแหน่งที่ 1 และ 1 คือตำแหน่งที่ 2
+
+SELECT
+	firstname, -- white space ไม่ได้มีผลกับ SQL 
+	lastname, -- Case insensitive คือจริงๆจะพิมพ์ชื่อ column แบบนี้ก็ได้ LASTNAME
+	company
+FROM customers;
+
+-- || เป็นการ concat ต่อกัน
+SELECT
+	firstname,
+	lastname,
+	firstname || ' ' || lastname, -- สร้าง column ใหม่เองได้ เป็นชื่อจริง นามสกุลต่อกัน
+	company
+FROM customers;
+
+-- AS ตั้งชื่อให้ใหม่
+SELECT
+	firstname,
+	lastname,
+	firstname || ' ' || lastname AS fullname,
+	company
+FROM customers;
+
+SELECT
+	name,
+	composer,
+	milliseconds/60000 AS minutes, -- เอาค่าในคอลัมน์มาคำนวณ +-*/ เป็นคอลัมน์ใหม่ได้
+	bytes/(1024*1024.0) AS MBs
+FROM tracks
+					-- แต่ milliseconds/60000 ผลลัพธ์จะแสดงออกมาเป็นจำนวนเต็ม
+					-- ถ้าอยากได้จุดทศนิยมให้ใส่ milliseconds/60000.0
+
+-- WHERE ใช้ในการ filter rows *** เป็นสิ่งที่ต้องใส่เสมอ ไม่งั้นดึงข้อมูลใหญ่โหลดนาน
+SELECT
+	name,
+	composer,
+	milliseconds/60000 AS minutes,
+	bytes/(1024*1024.0) AS MBs
+FROM tracks
+WHERE composer = 'Jerry Cantrell' OR composer = 'AC/DC'
+
+-- *** WHERE จะ run ก่อน SELECT *** --
+-- ดังนั้นถ้าเป็น WHERE composer = 'Jerry Cantrell' OR composer = 'AC/DC' AND MBs > 10 มันจะไม่ออก เพราะมันยังไม่มี column MBs
+-- ถ้าแบบนี้ WHERE composer = 'Jerry Cantrell' OR composer = 'AC/DC' AND bytes/(1024*1024.0) > 10 ออก
+-- เราควรจัดกลุ่ม condition ก่อนเพื่อรู้ว่าอะไรจะทำก่อนทำหลัง เช่น 
+-- WHERE (composer = 'Jerry Cantrell' OR composer = 'AC/DC') AND MBs > 10
+
+-- ใช้ IN ก็ได้เหมือนแบบว่ามีค่าอยู่ใน list นี้
+SELECT
+	name,
+	composer,
+	milliseconds/60000 AS minutes,
+	bytes/(1024*1024.0) AS MBs
+FROM tracks
+WHERE composer IN ('Jerry Cantrell', 'AC/DC') AND bytes/(1024*1024.0) > 10
+
+SELECT
+	firstname,
+	"hello", -- เราสร้างคอลัมน์ใหม่ได้แบบนี้เลย ค่ามันก็จะเป็น hello ทุกแถว
+	100,	-- ค่าเป็น 100 ทุกแถว
+FROM customers
+
+SELECT *
+FROM customers
+WHERE country = 'USA'
+
+SELECT *
+FROM customers
+WHERE country IN ('France', 'USA') -- value ที่อยู่ใน list นี้ต้องตรงเป้ะๆกับค่าที่อยู่ในตารางถึงจะออก
+				      -- ง่ายๆคือ value ที่เราจะเสิร์ชหาต้องเป้ะๆ
+
+-- การใช้ LIKE
+SELECT *
+FROM customers
+WHERE country IN ('France', 'USA', 'Belgium')
+AND firstname LIKE 'M%' -- pattern matching แปลว่าขึ้นต้นด้วย M แล้วตามหลังด้วยอะไรก็ได้
+			-- ก็จะแสดงคนที่อยู่ 1 ใน 3 ประเทศนั้น "และ" มีชื่อขึ้นต้นด้วยตัว M ด้วย
+SELECT *
+FROM customers
+WHERE country IN ('France', 'USA', 'Belgium')
+AND (firstname LIKE 'M%' OR firstname LIKE 'P%') -- ก็จะแสดงคนที่อยู่ 1 ใน 3 ประเทศนั้น "และ" มีชื่อขึ้นต้นด้วยตัว M หรือ P ก็ได้
+-- มันมีประโยชน์ เช่น เราไปหาชื่อสินค้าที่มีคำว่า '%เก้าอี้%' '%โต๊ะ%' ก็ได้
+
+-- การใช้ BETWEEN ... AND ...
+SELECT *
+FROM customers
+WHERE customerid BETWEEN 5 AND 9 --แปลว่าดึงค่าตั้งแต่ 5 ไปด้วยจนถึง 9
+
+-- *** WHERE จะ run ก่อน SELECT *** --
+SELECT firstname, email, country
+FROM customers
+WHERE city = 'Paris' -- สังเกตว่า คอลัมน์ที่ใช้ใน WHERE ไม่จำเป็นต้องอยู่ใน SELECT ก็ได้
+		     -- **เพราะว่า SQL run FROM ก่อนเพื่อดูว่าไปตารางไหน แล้วตามด้วย WHERE เพื่อ filter ก่อน จากนั้นค่อย run SELECT**
+
+-- การใช้ JOIN  by default เป็น INNER JOIN (ดึงเฉพาะ row ที่ overlap กัน)
+-- อยากรู้ว่าศิลปินแต่ละคนออกมาแล้วกี่ album
+SELECT *
+FROM artists
+JOIN albums ON artists.artistid = albums.artistid -- เชื่อมกันด้วย key (primary กับ foreign key //จะสลับตำแหน่งกันก็ได้) *** primary key ไม่มีทางซ้ำกัน
+						  -- ชื่อตาราง.คอลัมน์ที่เป็นkey
+-- เราสามารถ JOIN ต่อเนื่องได้
+SELECT *
+FROM artists
+JOIN albums ON artists.artistid = albums.artistid
+JOIN tracks ON tracks.albumid = albums.albumid -- แต่ละ album ออกมาแล้วกี่เพลง ก็เอาก้อนที่ JOIN แล้ว มา JOIN ด้วยตาราง tracks ต่อ (key ที่ใช้ join กันก็คือ albumid)
+
+-- ตั้งชื่อย่อตาราง เพราะชีวิตจริงชื่อตารางอาจจะยาวมาก (มักใช้ตัวย่อ 2-3 ตัวแรกของชื่อ)
+SELECT *
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid -- ผลลัพธ์จะเหมือนเดิม
+
+WHERE ar.artistsid = 100 
+   AND (tr.name LIKE '%Woman%' OR tr.name LIKE '%The%') -- อ้างอิงชื่อตารางด้วยว่า คอลัมน์ที่จะใช้ filter มันอยู่ตารางไหน
+-- ผลลัพธ์คือ เอาศิลปินคนที่ 100 เท่านั้น และเพลงของศิลปินคนนั้นมีคำว่า Woman หรือ The อยู่ในชื่อ
+
+SELECT
+  ar.name AS artistName,
+  al.title AS albumTitle,
+  tr.name AS trackName,
+  tr.Milliseconds/60000.0 AS minutes,
+  tr.bytes,
+  ge.name AS cateory
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid
+JOIN genres AS ge ON ge.genreid = tr.genreid
+
+WHERE ge.name = 'Rock' -- ประเภทเพลงเป็นร็อค
+   AND al.title LIKE 'The %' -- ต้องมีเว้นวรรค ถ้าเป็น 'The%' มันอาจได้ They Them Theory ...
+
+-- การใช้ Aggreate function
+SELECT
+  AVG(tr.milliseconds/60000.0) AS avg_minutes, -- อยากรู้ว่าแต่ละเพลงโดยเฉลี่มีความาวเพลงเท่าไร มันจะแสดงค่าเฉลี่ยออกมาเดี่ยวๆให้เลย
+  SUM(tr.milliseconds/60000.0) AS sum_minutes,
+  MIN(tr.milliseconds/60000.0) AS min_minutes,
+  MAX(tr.milliseconds/60000.0) AS max_minutes,
+  COUNT(tr.milliseconds/60000.0)
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid
+JOIN genres AS ge ON ge.genreid = tr.genreid
+
+-- การใช้ GROUP BY
+SELECT
+  ge.name, -- ต้องใส่คอลม์ที่จะใช้ GROUP BY ด้วยเสมอ
+  AVG(tr.milliseconds/60000.0) AS avg_minutes,
+  SUM(tr.milliseconds/60000.0) AS sum_minutes,
+  MIN(tr.milliseconds/60000.0) AS min_minutes,
+  MAX(tr.milliseconds/60000.0) AS max_minutes,
+  COUNT(tr.milliseconds/60000.0)
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid
+JOIN genres AS ge ON ge.genreid = tr.genreid
+GROUP BY ge.name -- จะได้ค่าสรุปทางสถิติ(aggregate) ตามลุ่มของประเภทเพลง
+
+-- การใช้ ORDER BY // by default เป็น ASC น้อยไปมาก // DESC มากไปน้อย
+SELECT
+  ge.name,
+  AVG(tr.milliseconds/60000.0) AS avg_minutes,
+  SUM(tr.milliseconds/60000.0) AS sum_minutes,
+  MIN(tr.milliseconds/60000.0) AS min_minutes,
+  MAX(tr.milliseconds/60000.0) AS max_minutes,
+  COUNT(tr.milliseconds/60000.0) AS songs
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid
+JOIN genres AS ge ON ge.genreid = tr.genreid
+GROUP BY ge.name -- หรือจะแทนด้วยเลข index ของคอลัมน์ก็ได้ ตัวอย่างนี้คอลัมน์นี้คือลำดับที่ 1 ใส่  GROUP BY 1
+ORDER BY songs DESC-- หรือจะแทนด้วยเลข index ของคอลัมน์ก็ได้ ตัวอย่างนี้คอลัมน์นี้คือลำดับที่ 6 ใส่  GROUP BY 6
+LIMIT 5;
+
+-- ***ลำดับการใส่ Code จะเป็นตามนี้ ถ้าสลับตำแหน่งมันจะ ERROR***--
+SELECT
+  ge.name,
+  AVG(tr.milliseconds/60000.0) AS avg_minutes,
+  SUM(tr.milliseconds/60000.0) AS sum_minutes,
+  MIN(tr.milliseconds/60000.0) AS min_minutes,
+  MAX(tr.milliseconds/60000.0) AS max_minutes,
+  COUNT(tr.milliseconds/60000.0) AS songs
+FROM artists AS ar
+JOIN albums AS al ON ar.artistid = al.artistid
+JOIN tracks AS tr ON tr.albumid = al.albumid
+JOIN genres AS ge ON ge.genreid = tr.genreid
+WHERE ge.name <> 'Rock'
+GROUP BY 1
+ORDER BY 6 DESC
+LIMIT 5;
+
+-- ตัวอย่าง STRFTIME
+SELECT
+  STRFTIME('%Y', invoicedate) AS year, -- strftime อันนี้คือดึงแค่ ปี จากตัว date ออกมา
+  COUNT(total) AS total_count,
+  AVG(total) AS average_total,
+  SUM(total) AS total_sum
+FROM inovices
+GROUP BY year; -- สรุปจัดกลุ่มตามปี
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+-- คอมเมนต์แบบเป็นก้อนใช้ /* */
+/* SELECT
+	firstname,
+	lastname
+FROM customers;*/
+
+
+-- ใช้ AS เปลี่ยนชื่อ column
+-- ใช้เงื่อนไข WHERE ค้นหา(filter)ข้อมูล
+-- เรียงลำดับด้วย ORDER BY ASC=น้อยไปมาก DESC=มากไปน้อย เรียงได้ทั้งเลขและตัวอักษร
+-- จำกัดปริมาณข้อมูลด้วย LIMIT
+-- INSERT INTO การเพิ่มข้อมูลลงไปใน table
+
+INSERT INTO customers -- ใส่ชื่อตาราง
+VALUES(60,'Sutatta','Rianthong','ABCCompany','Thai','Bangkok','Bangkok','Thailand',10240,NULL,NULL,"SR@gmail.com",NULL) --***เน้นว่า ใส่ข้อมูลตามลำดับของ column เท่านั้นดังนั้นห้ามใส่ผิด ใส่ข้าม ใส่ไม่ครบ // ดังนั้นต้องดูว่าตารางเรามีหัว column อะไรบ้าง
+-- ใส่ NULL เมื่อคอลัม์ไม่มีค่าข้อมูล
+-- แต่บาง column ถูกกำหนดว่าตองใส่ข้อมูลเท่านั้น เราก็ต้องหามาใส่ให้ได้ ไม่งั้นไม่ผ่าน เช่นตัวอย่างนี้คือ Email เป็น NULL ไมได้
+-- ผลลัพธ์ของการ INSERT มันจะโผล่ที่แถวล่างของตาราง
+
+INSERT INTO customers (firstname,lastname,Email) -- อันนี้เลือกใส่ข้อมูลแค่บาง column แต่ก็ต้องใส่ข้อมูลตามลำดับเฉพาะcolumn ที่เราใส่ในวงเล็บนี้
+VALUES('North','Cater',"NC@gmail.com")
+
+-- การ UPDATE ข้อมูล ก็คือการ Edit ข้อมูลที่มีมาอยู่แล้ว
+-- UPDATE, SET, WHERE 3 คำนี้มักมาด้วยกัน
+
+UPDATE customers -- ชื่อตราง
+SET firstname = "Northern", lastname = "Caterolly"-- ต้องการเปลี่ยนข้อมูลใน column อะไร ให้เป็นอะไร
+WHERE customerid = 61 -- *** ตรงนี้ระวังให้ดี ถ้าไม่กำหนดขอบเขตให้ดีว่าจะ update แค่ row ไหน มันจะอัพตัวอื่นหมดเลย
+
+-- การ DELETE ข้อมูล ***ระวังให้ดีลบแล้วหายเลย
+
+DELETE FROM customers -- ชื่อตาราง
+WHERE customerid = 61 -- กำหนดเงื่อนไขดวยว่าจะลบแค่อันไหน ไม่งั้นมันลบทั้งตาราง
+
+-- การจัดรวมกลุ่มด้วย GROUP BY
+SELECT city, COUNT(customerid) AS Qrt
+FROM customers
+GROUP BY city -- แสดงจำนวนคนที่อยู่ในเมืองนั้นๆ
+ORDER BY Qrt -- ใช้ได้ทั้งชื่อตารางเดิมหรือชื่อใหม่ก็ได้
+
+-- HAVING ใช้ filter กรณีมี aggreate function ** WHERE ไม่สามารถใช้งานได้กับ Aggregate function
+
+SELECT city, COUNT(customerid) AS Qrt
+FROM customers
+GROUP BY city
+HAVING COUNT(customerid) >= 5 -- **ใส่ HAVING หลัง GROUP BY // จะใส่ชื่อ coulumn เป็น Qrt แทนก็ได้
+ORDER BY Qrt DESC
+
+--*** ลำดับคำสั่ง SQL ***--
+SELECT
+FROM
+JOIN  ON
+WHERE
+GROUP BY
+HAVING
+ORDER BY
+LIMIT
+
+-- การใช้ SQL Operator // พวก AND OR NOT ทั้งหลาย
+
+-- การใช้ NOT
+SELECT *
+FROM employees
+WHERE NOT title = "IT Staff" -- เอาทุกคนยกเว้น IT Staff
+
+-- การใช้ IN (ต้องการข้อมูลที่อยูใน list นี้)
+SELECT *
+FROM employees
+WHERE title IN ("Sales Support Agent", "Sales Manager", "General Manager")
+-- ผสมกับ NOT ได้
+SELECT *
+FROM customers
+WHERE country NOT IN ("USA", "Brazil", "Sweden") -- เอาทุกประเทศทีไม่อยู่ใน list นี้
+-- หรือแบบนี้ก็ได้ WHERE NOT country IN ("USA", "Brazil", "Sweden")
+
+-- การใช้ LIKE
+SELECT *
+FROM customers
+WHERE firstname LIKE 'A%' -- ขึ้นต้นด้วย A แล้วตามด้วยอะไรก็ได้
+
+-- การใช้ BETWEEN
+SELECT *
+FROM customers
+WHERE customerid BETWEEN 10 AND 35 -- ได้ข้อมูลตั้งแต่ 10 จนถึง 35
+-- WHERE NOT customerid BETWEEN 10 AND 35 -- ใส่ NOT ก็คือจะยกเว้น 10-35
+
+SELECT *
+FROM customers
+WHERE (customerid BETWEEN 1 AND 30) AND country IN ("Brazil","Czech Republic")
+
+-- การใช้ IS NULL ดูข้อมูลที่มีช่องว่าง
+SELECT *
+FROM customers
+WHERE phone IS NULL -- ก็คือเช็คว่า column นั้นๆมีค่าว่างมั้ย มีกี่แถวที่ว่าง
+
+SELECT *
+FROM customers
+WHERE phone IS NOT NULL -- อันนี้ก็ตรงข้าม จะกลายเป็นคนมีเบอร์โทร
+
+-- AND ทั้ง 2 ฝั่งเป็นจริงถึงปรากฏ || OR ฝั่งใดฝั่งหนึ่งเป็นจริงก็จะปรากฏ ** ดังนั้นต้องระวังการตั้งเงื่อนไขให้มาก
+
+-- INNER JOIN คืนค่าข้อมูลที่จับคู่กันได้เท่านั้น
+-- LEFT JOIN เอาทั้งหมดของตารางฝั่งซ้าย และเอาส่วนที่จับคู่กับตารางฝั่งขวาได้ด้วย
+-- RIGHT JOIN เอาทั้งหมดของตารางฝั่งขวา และเอาส่วนที่จับคู่กับตารางฝั่งซ้ายได้ด้วย
+-- FULL JOIN เอาทั้งหมดมาแสดงเลยไม่ว่าจะจับคู่ได้ไม่ได้
+
+-- เราสามารถ JOIN ข้อมูลภายใน table เดียวกันได้
+-- เช่นตัวอย่างตารา employees จะมี employeeid กับ reportsTo (ขึ้นตรงกับใคร) มันเป็นเลขเดียวกัน
+SELECT 
+   employees.employeeid,
+   employees.firstname,
+   employees.lastname,
+   employees.title,
+   employers.firstname,
+   employers.lastname
+FROM employees
+INNER JOIN employees AS employers -- เพราะมันคือตารางเดียวกันเลยต้องตั้งชื่อให้ต่างเพื่อไม่ให้โปรแกรมสับสน
+
+-- การใช้ CASE กำหนดเงื่อนไขการประมวลผล (เหมือน IF) *** CASE ต้องอยู่ก่อน FROM
+SELECT
+   invoiceid,
+   total
+CASE				-----
+WHEN total >= 10 THEN "AAA"	     |
+WHEN total < 10 THEN "AA"	      ---- ผลลัพธ์ก้อน case ออกมาเป็น 1 column โดยเราตั้งชื่อไว้ว่า Result
+ELSE "NONE"			     |
+END AS Result			-----
+FROM invoices
+
+-- *** ระวังลำดับการวางเงื่อนไข ถ้าเอาเข้า WHEN ไหนแล้วถูกต้องก่อน มันะหยุดคิดทันที ไม่พิจารณาเงื่อนไขที่เหลือ
+SELECT
+   invoiceid,
+   total
+CASE
+WHEN total >= 10 THEN "AAA"
+WHEN total < 10 THEN "AA" -- สมมติ total = 1.98 มันก็จะนิยามเป็น AA ไปเลยทั้งที่มันควรจะเป็น A
+WHEN total <= 5 THEN "A"
+ELSE "NONE"
+END AS Result
+FROM invoices
+-- แก้ให้ถูก
+SELECT
+   invoiceid,
+   total
+CASE
+WHEN total >= 10 THEN "AAA"
+WHEN total > 5 AND total < 10 THEN "AA"
+WHEN total <= 5 THEN "A"
+ELSE "NONE"
+END AS Result
+FROM invoices
+-- หรือสลับตำแหน่งแก้แบบนี้
+WHEN total >= 10 THEN "AAA" -- 1.98 ไม่ตรงเงื่อนไขนี้ดังนั้นไปต่อ // ถ้า 8.91 ไปต่อ
+WHEN total <= 5 THEN "A" -- 1.98 ตรงเงื่อนไขนี้ ดังนั้นหยุดแค่นี้ // ถ้า 8.91 ไปต่อ
+WHEN total < 10 THEN "AA" -- 8.91 ตรงเงื่อนไขนี้ก็หยุด
